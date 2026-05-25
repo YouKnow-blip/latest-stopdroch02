@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
 import { ShieldCheck, Mail, Lock, User as UserIcon, Sparkles, Shield, AlertCircle, ArrowLeft } from "lucide-react";
 import { UserStats } from "../types";
+import { registerWithEmail, loginWithEmail } from "../lib/firebaseSync";
 
 interface AuthViewProps {
   onAuthSuccess: (token: string, user: UserStats) => void;
@@ -27,23 +28,24 @@ export default function AuthView({ onAuthSuccess, onClose, onTriggerNotification
       return;
     }
 
-    const endpoint = isSignUp ? "/api/auth/register" : "/api/auth/login";
-    const payload = isSignUp ? { email, username, password } : { email, password };
-
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Произошла ошибка авторизации");
+      let result;
+      if (isSignUp) {
+        // Retrieve current active progress from local storage to carry over
+        let currentStats: UserStats | undefined;
+        const savedUser = localStorage.getItem("stopdroch_user");
+        if (savedUser) {
+          try {
+            currentStats = JSON.parse(savedUser) as UserStats;
+          } catch (_) {}
+        }
+        result = await registerWithEmail(email, password, username, currentStats);
+      } else {
+        result = await loginWithEmail(email, password);
       }
 
-      onAuthSuccess(data.token, data.user);
-      onTriggerNotification(`С возвращением, ${data.user.username}! Разум защищен под надежной опекой.`, "success");
+      onAuthSuccess(result.token, result.user);
+      onTriggerNotification(`С возвращением, ${result.user.username}! Разум защищен под надежной опекой.`, "success");
       onClose();
     } catch (err: any) {
       setErrorMsg(err.message || "Ошибка подключения к серверу");

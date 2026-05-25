@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with streak progression, tasks and unlocked ranks",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "streakDays": {
+          "type": "integer"
+        },
+        "bestStreakDays": {
+          "type": "integer"
+        },
+        "preventedSlips": {
+          "type": "integer"
+        },
+        "disciplineLevel": {
+          "type": "integer"
+        },
+        "xp": {
+          "type": "integer"
+        },
+        "lastSlipDate": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "customBlockedSites": {
+          "type": "array"
+        },
+        "strictMode": {
+          "type": "boolean"
+        }
+      },
+      "required": ["id", "username", "email", "streakDays", "xp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User statistics, settings and block list profiles synced across extension"
+    }
+  }
+}

@@ -111,6 +111,15 @@ export default function Navbar({ user, onNavigate, currentTab, onLogout, onOpenA
 
               {/* Profile/Logout menu */}
               <div className="flex items-center space-x-1.5">
+                {(user.email === "anonymous@stopdroch.app" || user.username.startsWith("Падаван #")) && (
+                  <button
+                    onClick={onOpenAuth}
+                    className="mr-2 text-[10px] bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-500 font-extrabold px-3 py-1.5 rounded-xl uppercase transition-all cursor-pointer"
+                  >
+                    🔒 СОХРАНИТЬ ПРОФИЛЬ
+                  </button>
+                )}
+                
                 <div className="bg-slate-900 border border-slate-850 px-3 py-1.5 rounded-xl flex items-center space-x-2">
                   <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-md shadow-blue-550/20">
                     {user.username.slice(0, 2).toUpperCase()}

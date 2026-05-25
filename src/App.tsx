@@ -9,6 +9,14 @@ import ExtensionDownloadView from "./components/ExtensionDownloadView";
 import MascotNedrochable from "./components/MascotNedrochable";
 import AuthView from "./components/AuthView";
 import { ShieldCheck, Sparkles, Volume2, Calendar, Trophy, AlertTriangle, Info, Bell, X, Compass } from "lucide-react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./lib/firebase";
+import { 
+  ensureAnonymousSession, 
+  loadOrCreateUserProfile, 
+  syncUserProfileToFirebase,
+  logoutUserProfile
+} from "./lib/firebaseSync";
 
 interface Toast {
   id: string;
@@ -50,58 +58,7 @@ export default function App() {
     }
   };
 
-  // Load active user session on startup
-  useEffect(() => {
-    const savedUser = localStorage.getItem("stopdroch_user");
-    const savedToken = localStorage.getItem("stopdroch_token");
-
-    if (savedUser && savedToken) {
-      try {
-        const parsed = JSON.parse(savedUser) as UserStats;
-        setUser(parsed);
-      } catch (e) {
-        console.error("Session parse error", e);
-      }
-    } else {
-      // Seed a guest user by default so the dashboard is fully explorer-ready without forced blocking registrations!
-      const seedGuest: UserStats = {
-        id: "usr_guest",
-        username: "Хранитель Воли",
-        email: "drugperedaca@gmail.com",
-        streakDays: 5,
-        bestStreakDays: 14,
-        preventedSlips: 24,
-        disciplineLevel: 3,
-        xp: 450,
-        lastSlipDate: new Date(Date.now() - 5 * 24 * 3605 * 1000).toISOString(),
-        createdAt: new Date().toISOString(),
-        customBlockedSites: ["instagram.com", "vk.com"],
-        whitelistSites: [],
-        strictMode: true,
-        missions: [
-          { id: "m1", title: "Сделать 20 отжиманий", completed: true, category: "sport", xpReward: 50 },
-          { id: "m2", title: "10 минут медитации Дисциплины", completed: false, category: "mind", xpReward: 50 },
-          { id: "m3", title: "Прочесть 1 совет Недрочабля", completed: true, category: "discipline", xpReward: 30 },
-          { id: "m4", title: "Ограничить соцсети до 30 минут", completed: false, category: "detox", xpReward: 60 }
-        ],
-        unlockedAchievements: ["streak_1", "prevention_10"]
-      };
-      setUser(seedGuest);
-    }
-
-    fetchLeaderboard();
-    fetchQuote();
-  }, []);
-
-  // Update client-side user reference & save session
-  const handleUpdateFullUser = (newUserState: UserStats) => {
-    setUser(newUserState);
-    if (newUserState.id !== "usr_guest") {
-      localStorage.setItem("stopdroch_user", JSON.stringify(newUserState));
-    }
-  };
-
-  // Sync data to Cloud Express DB on active states changes
+  // Sync data to Cloud Express DB on active states changes (for global rankings and plugin)
   const handleCloudSync = async (newUserState: UserStats) => {
     try {
       const res = await fetch("/api/user/sync", {
@@ -115,6 +72,68 @@ export default function App() {
     } catch (err) {
       console.log("Offline stats cached", err);
     }
+  };
+
+  // Load active user session on startup & bind Firebase auth changes
+  useEffect(() => {
+    let unsubscribe: () => void;
+
+    async function initFirebaseSync() {
+      try {
+        // Enforce valid user session (anonymous if not logged in)
+        const fbUser = await ensureAnonymousSession();
+        
+        // Grab local storage values to migrate if they are not already in cloud
+        let fallbackLocalStats: Partial<UserStats> | undefined;
+        const savedUser = localStorage.getItem("stopdroch_user");
+        if (savedUser) {
+          try {
+            fallbackLocalStats = JSON.parse(savedUser) as Partial<UserStats>;
+          } catch (_) {}
+        }
+
+        const loadedUser = await loadOrCreateUserProfile(fbUser, fallbackLocalStats);
+        setUser(loadedUser);
+        localStorage.setItem("stopdroch_user", JSON.stringify(loadedUser));
+        handleCloudSync(loadedUser);
+
+        // Realtime sync auth state
+        unsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const stats = await loadOrCreateUserProfile(user);
+            setUser(stats);
+            localStorage.setItem("stopdroch_user", JSON.stringify(stats));
+            handleCloudSync(stats);
+          }
+        });
+      } catch (err) {
+        console.error("Firebase startup sync error", err);
+        // Fallback to local storage
+        const savedUser = localStorage.getItem("stopdroch_user");
+        if (savedUser) {
+          try {
+            setUser(JSON.parse(savedUser));
+          } catch (_) {}
+        }
+      }
+    }
+
+    initFirebaseSync();
+    fetchLeaderboard();
+    fetchQuote();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
+  // Update client-side user reference & save session
+  const handleUpdateFullUser = (newUserState: UserStats) => {
+    setUser(newUserState);
+    localStorage.setItem("stopdroch_user", JSON.stringify(newUserState));
+    syncUserProfileToFirebase(newUserState);
   };
 
   // Simple stats increments (gift XP/Prevents)
@@ -150,35 +169,20 @@ export default function App() {
     fetchLeaderboard();
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("stopdroch_user");
     localStorage.removeItem("stopdroch_token");
     
-    // Fallback to fresh guest session to keep app sandbox active
-    const seedGuest: UserStats = {
-      id: "usr_guest",
-      username: "Хранитель Воли",
-      email: "drugperedaca@gmail.com",
-      streakDays: 0,
-      bestStreakDays: 0,
-      preventedSlips: 0,
-      disciplineLevel: 1,
-      xp: 0,
-      lastSlipDate: null,
-      createdAt: new Date().toISOString(),
-      customBlockedSites: [],
-      whitelistSites: [],
-      strictMode: false,
-      missions: [
-        { id: "m1", title: "Сделать 20 отжиманий", completed: false, category: "sport", xpReward: 50 },
-        { id: "m2", title: "10 минут медитации Дисциплины", completed: false, category: "mind", xpReward: 50 },
-        { id: "m3", title: "Прочесть 1 совет Недрочабля", completed: false, category: "discipline", xpReward: 30 },
-        { id: "m4", title: "Ограничить соцсети до 30 минут", completed: false, category: "detox", xpReward: 60 }
-      ],
-      unlockedAchievements: []
-    };
-    setUser(seedGuest);
-    triggerNotification("Вы вышли из учетной записи. Активен гостевой профиль.", "warning");
+    try {
+      const freshStats = await logoutUserProfile();
+      setUser(freshStats);
+      localStorage.setItem("stopdroch_user", JSON.stringify(freshStats));
+      handleCloudSync(freshStats);
+      triggerNotification("Вы вышли из учетной записи. Активен чистый гостевой профиль джедая.", "success");
+    } catch (err) {
+      console.error("Firebase logout error", err);
+      triggerNotification("Ошибка выхода. Пожалуйста, попробуйте еще раз.", "warning");
+    }
   };
 
   // Toast dispatch
@@ -258,6 +262,7 @@ export default function App() {
               onUpdateFullUser={handleUpdateFullUser}
               onTriggerNotification={triggerNotification}
               onSync={handleCloudSync}
+              onOpenAuth={() => setAuthOpen(true)}
             />
           </div>
         )}

@@ -11,9 +11,10 @@ interface DashboardViewProps {
   onUpdateFullUser: (updatedUser: UserStats) => void;
   onTriggerNotification: (msg: string, type: "success" | "warning") => void;
   onSync: (user: UserStats) => void;
+  onOpenAuth?: () => void;
 }
 
-export default function DashboardView({ user, leaderboard, onUpdateFullUser, onTriggerNotification, onSync }: DashboardViewProps) {
+export default function DashboardView({ user, leaderboard, onUpdateFullUser, onTriggerNotification, onSync, onOpenAuth }: DashboardViewProps) {
   const [newSiteInput, setNewSiteInput] = useState("");
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [leaderboardTab, setLeaderboardTab] = useState<"global" | "weekly">("global");
@@ -181,28 +182,26 @@ export default function DashboardView({ user, leaderboard, onUpdateFullUser, onT
     <div className="space-y-6" id="dashboard-tab-content">
       
       {/* Profile Creation Prompt banner */}
-      {(!user.username || user.username.startsWith("usr_") || user.username === "Хранитель" || user.username === "Guest") && (
+      {(user.email === "anonymous@stopdroch.app" || user.username.startsWith("Падаван #") || user.id.startsWith("usr_guest")) && (
         <div className="bg-gradient-to-r from-amber-500/10 via-amber-600/15 to-red-500/10 border-2 border-amber-500/40 rounded-[28px] p-5 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-amber-500/20 border border-amber-400 rounded-full flex items-center justify-center text-amber-500 flex-shrink-0">
               <ShieldAlert className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-amber-400">ВЫ ИСПОЛЬЗУЕТЕ ВРЕМЕННЫЙ ПРОФИЛЬ ПАДАВАНА 🛡&zwj;♂️</h4>
-              <p className="text-xs text-slate-305 leading-relaxed mt-1">
-                Все ваши стрики, достижения и щиты заблокированных сайтов хранятся локально. Нажмите кнопку, чтобы создать полноценный профиль и подвязать все накопленные данные!
+              <h4 className="font-extrabold text-sm text-amber-400">ВЫ ИСПОЛЬЗУЕТЕ ВРЕМЕННЫЙ ПРОФИЛЬ ПАДАВАНА 🛡️</h4>
+              <p className="text-xs text-slate-300 leading-relaxed mt-1">
+                Все ваши стрики, достижения и щиты заблокированных сайтов хранятся во временном профиле Firebase. Нажмите кнопку, чтобы создать полноценный аккаунт и надежно синхронизировать все накопленные данные джедая!
               </p>
             </div>
           </div>
           <button
             onClick={() => {
-              // Trigger tab shift or show auth by searching and clicking Auth indicator
-              const authTab = document.querySelector('[data-tab="auth"]') as HTMLButtonElement || document.querySelector("#nav-btn-auth") as HTMLButtonElement;
-              if (authTab) {
-                authTab.click();
+              if (onOpenAuth) {
+                onOpenAuth();
               } else {
-                // fallback scroll to tab view
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                const navBtn = document.querySelector("#nav-btn-auth") as HTMLButtonElement;
+                if (navBtn) navBtn.click();
               }
             }}
             className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black transition-all shadow-md cursor-pointer whitespace-nowrap"
