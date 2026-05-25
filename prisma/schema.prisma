@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String        @id @default(uuid())
+  email          String        @unique
+  username       String        @unique
+  passwordHash   String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  stats          UserStats?
+  sessions       Session[]
+  achievements   UserAchievement[]
+  missions       UserMission[]
+  blockedSites   BlockedSite[]
+}
+
+model UserStats {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  streakDays     Int       @default(0)
+  bestStreakDays Int       @default(0)
+  preventedSlips Int       @default(0)
+  disciplineLevel Int      @default(1)
+  xp             Int       @default(0)
+  lastSlipDate   DateTime?
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+}
+
+model BlockedSite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, domain])
+}
+
+model UserAchievement {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug        String   // "streak_1", "streak_30", "sigma_control", etc.
+  unlockedAt  DateTime @default(now())
+
+  @@unique([userId, slug])
+}
+
+model UserMission {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missionId   String   // "mission_sport_1", etc.
+  completedAt DateTime @default(now())
+
+  @@unique([userId, missionId])
+}

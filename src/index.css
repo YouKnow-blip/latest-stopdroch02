@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,500&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-jedi-blue-50: #eff6ff;
+  --color-jedi-blue-100: #dbeafe;
+  --color-jedi-blue-200: #bfdbfe;
+  --color-jedi-blue-500: #3b82f6;
+  --color-jedi-blue-600: #2563eb;
+  --color-jedi-blue-700: #1d4ed8;
+}
+
+@keyframes pulse-saber {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.7), 0 0 25px rgba(37, 99, 235, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.9);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(37, 99, 235, 0.95), 0 0 50px rgba(37, 99, 235, 0.7), inset 0 0 12px rgba(255, 255, 255, 1);
+  }
+}
+
+@keyframes pulse-glow-light {
+  0%, 100% {
+    opacity: 0.12;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-0.5deg);
+  }
+}
+
+.saber-glow {
+  text-shadow: 0 0 10px rgba(37, 99, 235, 0.85);
+}
+
+.animate-saber {
+  animation: pulse-saber 1.8s infinite ease-in-out;
+}
+
+.animate-float {
+  animation: float 4.5s infinite ease-in-out;
+}
+
+.ambient-blue-glow {
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 70%);
+}
+
+/* Glassmorphism/Sleek design card utility */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 65, 85, 0.45);
+}
+
+.dark-glass-panel {
+  background: rgba(9, 15, 30, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.mesh-bg {
+  background-color: #050814;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.16) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(29, 78, 216, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(59, 130, 246, 0.12) 0px, transparent 45%);
+}

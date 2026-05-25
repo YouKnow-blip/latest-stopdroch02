@@ -1,0 +1,6 @@
+{
+  "name": "СТОПДРОЧЬ",
+  "description": "Экосистема дисциплины и отказа от порнозависимости. Включает интерактивный дашборд, трекер прогресса, цитатник, советы джедая Дисциплины и генератор Chrome Extension.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
